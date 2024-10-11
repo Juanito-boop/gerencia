@@ -1,101 +1,161 @@
-import Image from "next/image";
+"use client"
 
-export default function Home() {
+import { FormEvent, useState } from 'react'
+import { Eye, EyeOff, Calendar } from 'lucide-react'
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { useToast } from '@/hooks/use-toast'
+import { Toast } from '@radix-ui/react-toast'
+import { ToastTitle } from '@/components/ui/toast'
+
+export default function LoginPage() {
+  const [showPassword, setShowPassword] = useState(false)
+  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [username, setUsername] = useState<string>("")
+  const [error, setError] = useState<string | null>(null)
+  const [password, setPassword] = useState<string>("")
+  const [response, setResponse] = useState<string | null>(null)
+
+  const togglePasswordVisibility = () => setShowPassword(!showPassword)
+  const { toast } = useToast()
+
+  const usernameRegex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9]+$/;
+  const passwordRegex = /^[^\\"';,./\\]+$/;
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setIsLoading(true)
+
+    if(!usernameRegex.test(username)) {
+      setError('El nombre de usuario no puede contener números ni caracteres especiales.')
+      toast({
+        title: "Error",
+        description: 'El nombre de usuario no puede contener números ni caracteres especiales.',
+      })
+      setIsLoading(false)
+      return
+    }
+
+    if (!passwordRegex.test(password)) {
+      setError('La contraseña no puede contener caracteres especiales.')
+      toast({
+        title: "Error",
+        description: 'La contraseña no puede contener caracteres especiales.',
+      })
+      setIsLoading(false)
+      return
+    }
+
+    try {
+      const payload = {
+        username: username,
+        password_hash: password,
+      }
+
+      const response = await fetch('http://localhost:8088/api/v1/public/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to submit the data. Please try again.')
+      }
+
+      const data = await response.json()
+      setResponse(data)
+    } catch (e: any) {
+      setError(e.message ?? "")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="min-h-screen bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white rounded-lg shadow-xl overflow-hidden">
+        <div className="p-4 sm:p-6 md:p-8">
+          <div className="flex justify-center mb-6">
+            <Calendar className="h-12 w-12 text-purple-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-center text-gray-700 mb-4">
+            Iniciar Sesión en EventoPro
+          </h2>
+          {error && <div className='text-red-500 text-sm'>{error}</div>}
+          {response && <div className='text-green-500 text-sm'>{response}</div>}
+          <form className="space-y-6" onSubmit={onSubmit}>
+            <div className="space-y-2">
+              <Label htmlFor="username">Nombre de Usuario</Label>
+              <Input
+                id="username"
+                placeholder=""
+                type="text"
+                autoCapitalize="none"
+                autoComplete="username"
+                autoCorrect="off"
+                required
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className='flex flex-row gap-x-2' htmlFor="password">Contraseña<p className='text-gray-400'>(8 caracteres minimo)</p></Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder='********'
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={togglePasswordVisibility}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                  aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4 text-gray-500" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-gray-500" />
+                  )}
+                </button>
+              </div>
+            </div>
+            <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700" disabled={isLoading} onClick={()=> {
+              toast({
+                title: "Iniciando Sesión",
+                description: 'Iniciando Sesión...',
+              })
+            }}>
+              {isLoading ? 'Cargando...' : 'Iniciar Sesión'}
+            </Button>
+          </form>
+          <div className="mt-4 text-center">
+            <a href="#" className="text-sm text-purple-600 hover:underline">¿Olvidaste tu contraseña?</a>
+          </div>
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-600">
+              ¿No tienes una cuenta?{" "}<a href="/registro" className="text-purple-600 hover:underline">Regístrate</a>
+            </p>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        <div className="px-4 py-6 bg-gray-50 border-t border-gray-100 text-center">
+          <p className="text-xs text-gray-600">
+            Al iniciar sesión, aceptas nuestros{" "}
+            <a href="#" className="text-purple-600 hover:underline">
+              Términos de Servicio
+            </a>{" "}y{" "}
+            <a href="#" className="text-purple-600 hover:underline">
+              Política de Privacidad
+            </a>
+          </p>
+        </div>
+      </div>
     </div>
-  );
+  )
 }
