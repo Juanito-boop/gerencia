@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from '@/hooks/use-toast'
+import { useRouter } from 'next/navigation'
+import { backend_url } from '@/constantes'
 
 export default function RegisterPage() {
 	const [showPassword, setShowPassword] = useState(false)
@@ -19,6 +21,8 @@ export default function RegisterPage() {
 		password: '',
 		confirmPassword: ''
 	})
+
+	const router = useRouter()
 
 	const togglePasswordVisibility = (field: 'password' | 'confirmPassword') => {
 		if (field === 'password') {
@@ -95,7 +99,7 @@ export default function RegisterPage() {
 		}
 
 		try {
-			const response = await fetch('http://localhost:8088/api/v1/public/crearUsuarios', {
+			const response = await fetch(`${backend_url}/crearUsuario`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
@@ -106,13 +110,13 @@ export default function RegisterPage() {
 					"email":			formData.email,
 					"username":		formData.username,
 					"password":		formData.password,
-					"avatar_url":	'',
-					"rol":				2
+					"rol": "usuario",
 				}),
 			})
 			
-			if (!response.ok) {
-				throw new Error('Error al registrar. Por favor, intenta de nuevo.')
+			if (response.ok === true) {
+				console.log(response)
+				router.push('/')
 			}
 
 			toast({
@@ -120,6 +124,7 @@ export default function RegisterPage() {
 				description: "Tu cuenta ha sido creada exitosamente.",
 				variant: 'constructive'
 			})
+
 		} catch (error: any) {
 			toast({
 				title: "Error",
@@ -139,7 +144,7 @@ export default function RegisterPage() {
 	}
 
 	return (
-		<div className="min-h-screen bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 flex items-center justify-center p-4">
+		<div className="min-h-screen bg-gradient-to-br from-[#ea3433] to-[#2c457e] flex items-center justify-center p-4">
 			<div className="max-h-screen w-full max-w-2xl bg-white rounded-lg shadow-xl overflow-hidden">
 				<div className="p-4 sm:p-6 md:p-8">
 					<div className="flex justify-center mb-6">

@@ -6,11 +6,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
+import { useRouter } from 'next/navigation'
+import { backend_url } from '@/constantes'
 
 export default function LoginPage() {
 	const [showPassword, setShowPassword] = useState(false)
 	const [isLoading, setIsLoading] = useState(false)
 	const [credentials, setCredentials] = useState({ username: '', password: '' })
+	const router = useRouter()
 	const { toast } = useToast()
 
 	const usernameRegex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9]+$/
@@ -50,13 +53,18 @@ export default function LoginPage() {
 		if (!validateInputs()) return
 
 		setIsLoading(true)
+		console.log(credentials)
 
 		try {
-			const response = await fetch('http://localhost:8088/api/v1/public/token', {
+			const response = await fetch(`${backend_url}/token`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(credentials),
-			})
+			});
+
+			const data = await response.json();
+			console.log(data)
+			localStorage.setItem('token', data.token);
 
 			if (!response.ok) {
 				toast({
@@ -65,6 +73,11 @@ export default function LoginPage() {
 					variant: "destructive"
 				})
 				return
+			}
+
+			if (response.ok === true) {
+				console.log(response)
+				router.push('/home')
 			}
 
 			toast({
@@ -84,7 +97,7 @@ export default function LoginPage() {
 	}
 
 	return (
-		<div className="min-h-screen bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 flex items-center justify-center p-4">
+		<div className="min-h-screen bg-gradient-to-br from-[#ea3433] to-[#2c457e] flex items-center justify-center p-4">
 			<div className="w-full max-w-md bg-white rounded-lg shadow-xl overflow-hidden">
 				<div className="p-4 sm:p-6 md:p-8">
 					<div className="flex justify-center mb-6">
